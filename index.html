@@ -361,7 +361,7 @@
 
             try {
                 const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-                const apiKey = ""; // Provided by environment
+                const apiKey = "AIzaSyC-ZcBjJWD1Vw7PDS6T8QzQGp2RJlmL2aM"; // Provided by environment
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
