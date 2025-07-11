@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Job Search</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use the Inter font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple spinner animation */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Modal styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b border-gray-200">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4 md:mb-0">
+                AI Powered Job Search 🚀
+            </h1>
+            <div class="actions flex space-x-2">
+                <button id="export-button" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-green-700 transition duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Export to Excel</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Control Sidebar -->
+            <aside class="w-full lg:w-1/4 xl:w-1/5">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h4 class="text-xl font-bold mb-2">Search</h4>
+                     <p class="text-sm text-gray-600 mb-6">Find US Product Manager jobs from the past week.</p>
+                    <button id="ai-search-button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-200 flex items-center justify-center space-x-2 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <span>Search PM Jobs</span>
+                    </button>
+                    
+                    <hr class="my-6">
+
+                    <h4 class="text-xl font-bold mb-4">Filters</h4>
+                    
+                     <!-- State Filter -->
+                    <div class="filter-group mb-6">
+                        <label for="state-filter" class="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                        <select id="state-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="All">All States</option>
+                            <!-- States will be populated by JS -->
+                        </select>
+                    </div>
+
+                    <!-- City Filter -->
+                    <div class="filter-group mb-6">
+                        <label for="city-filter" class="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                        <input type="text" id="city-filter" placeholder="e.g., Lehi, Austin" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Salary Range Filter -->
+                    <div class="filter-group mb-6">
+                        <label for="salary-filter" class="block text-sm font-semibold text-gray-700 mb-2">Min Salary ($)</label>
+                        <input type="range" id="salary-filter" name="salary" min="50000" max="250000" step="10000" value="50000" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="text-sm text-gray-600 mt-1 font-semibold" id="salary-value">$50,000+</div>
+                    </div>
+
+                    <!-- Company Type Filter -->
+                    <div class="filter-group mb-6">
+                        <label for="company-type-filter" class="block text-sm font-semibold text-gray-700 mb-2">Company Type</label>
+                        <select id="company-type-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="All">All</option>
+                            <option value="Startup">Startup</option>
+                            <option value="Public">Public</option>
+                            <option value="Private">Private</option>
+                            <option value="Non-Profit">Non-Profit</option>
+                        </select>
+                    </div>
+
+                    <!-- Work Type Filter -->
+                    <div class="filter-group">
+                        <label for="work-type-filter" class="block text-sm font-semibold text-gray-700 mb-2">Work Type</label>
+                        <select id="work-type-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="All">All</option>
+                            <option value="On-site">On-site</option>
+                            <option value="Hybrid">Hybrid</option>
+                            <option value="Remote">Remote</option>
+                        </select>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Job Listings -->
+            <main class="flex-grow">
+                 <!-- Sort and Count Display -->
+                <div id="results-header" class="mb-4 flex justify-between items-center hidden">
+                    <p id="results-count" class="text-sm font-semibold text-gray-600"></p>
+                    <div class="flex items-center">
+                        <label for="sort-by" class="text-sm font-semibold text-gray-700 mr-2">Sort by:</label>
+                        <select id="sort-by" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="recent">Most Recent</option>
+                            <option value="company">Company (A-Z)</option>
+                            <option value="location">Location (A-Z)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Job Cards Container -->
+                <div id="job-listings" class="space-y-4">
+                    <!-- Initial placeholder message -->
+                    <div id="placeholder" class="text-center py-16 px-6 bg-white rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700">Ready to find your next role?</h3>
+                        <p class="text-gray-500 mt-2">Click "Search PM Jobs" to see live results.</p>
+                    </div>
+                    <!-- Loading spinner (hidden by default) -->
+                    <div id="loading-spinner" class="hidden text-center py-16 px-6 bg-white rounded-xl shadow-md flex flex-col items-center justify-center">
+                        <div class="spinner"></div>
+                        <p class="text-gray-600 mt-4">Searching for jobs...</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- AI Feature Modal -->
+    <div id="ai-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-2xl font-bold"></h3>
+                <button id="modal-close-button" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div id="modal-body" class="prose max-w-none">
+                <!-- AI content will be injected here -->
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                 <button id="modal-copy-button" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-200">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- DOM ELEMENT REFERENCES ---
+        const searchButton = document.getElementById('ai-search-button');
+        const exportButton = document.getElementById('export-button');
+        const jobListingsContainer = document.getElementById('job-listings');
+        const placeholder = document.getElementById('placeholder');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const resultsHeader = document.getElementById('results-header');
+        const resultsCount = document.getElementById('results-count');
+        const aiModal = document.getElementById('ai-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const modalCopyButton = document.getElementById('modal-copy-button');
+        
+        // Filter elements
+        const salaryFilter = document.getElementById('salary-filter');
+        const salaryValue = document.getElementById('salary-value');
+        const companyTypeFilter = document.getElementById('company-type-filter');
+        const workTypeFilter = document.getElementById('work-type-filter');
+        const stateFilter = document.getElementById('state-filter');
+        const cityFilter = document.getElementById('city-filter');
+        const sortBy = document.getElementById('sort-by');
+        
+        // --- STATE MANAGEMENT ---
+        let allJobs = []; // Master list of jobs from AI
+
+        const usStates = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
+
+        // --- INITIALIZATION ---
+        function populateStates() {
+            usStates.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateFilter.appendChild(option);
+            });
+        }
+        populateStates();
+
+        // --- EVENT LISTENERS ---
+        searchButton.addEventListener('click', performAiSearch);
+        exportButton.addEventListener('click', exportToCsv);
+        salaryFilter.addEventListener('input', () => {
+            salaryValue.textContent = `$${parseInt(salaryFilter.value).toLocaleString()}+`;
+            applyFiltersAndSort();
+        });
+        companyTypeFilter.addEventListener('change', applyFiltersAndSort);
+        workTypeFilter.addEventListener('change', applyFiltersAndSort);
+        stateFilter.addEventListener('change', applyFiltersAndSort);
+        cityFilter.addEventListener('input', applyFiltersAndSort);
+        sortBy.addEventListener('change', applyFiltersAndSort);
+        
+        // Modal listeners
+        modalCloseButton.addEventListener('click', () => aiModal.classList.add('hidden'));
+        aiModal.addEventListener('click', (e) => {
+            if (e.target === aiModal) {
+                aiModal.classList.add('hidden');
+            }
+        });
+        modalCopyButton.addEventListener('click', () => {
+            const textToCopy = modalBody.innerText;
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextarea);
+            modalCopyButton.textContent = 'Copied!';
+            setTimeout(() => { modalCopyButton.textContent = 'Copy'; }, 2000);
+        });
+
+        // AI Feature Button Listener (using event delegation)
+        jobListingsContainer.addEventListener('click', (e) => {
+            const button = e.target.closest('[data-ai-feature]');
+            if (button) {
+                e.preventDefault();
+                e.stopPropagation();
+                const feature = button.dataset.aiFeature;
+                const jobCard = button.closest('.job-card');
+                const jobTitle = jobCard.dataset.title;
+                const company = jobCard.dataset.company;
+                handleAiFeatureClick(feature, jobTitle, company);
+            }
+        });
+
+
+        // --- CORE FUNCTIONS ---
+
+        /**
+         * Fetches job data from the AI model.
+         */
+        async function performAiSearch() {
+            placeholder.classList.add('hidden');
+            resultsHeader.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            jobListingsContainer.innerHTML = '';
+            jobListingsContainer.appendChild(loadingSpinner);
+            allJobs = []; // Reset job list
+            exportButton.disabled = true;
+            exportButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const prompt = `Your single most important mission is to conduct a completely exhaustive search for 'Product Manager' jobs in the US from the last 7 days. To ensure a comprehensive list, you must include results from premier job boards like Mind the Product, The Product Folks, Built In, Wellfound, Remotive, LinkedIn, Indeed, and ZipRecruiter. Do not omit any results. For every job, provide a direct, functioning URL to the job description page, a valid job title, company name, location, estimated salary range (or "Not specified"), work type, and company type. Respond with a JSON array of objects.`;
+
+            const schema = {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        "title": { "type": "STRING" },
+                        "company": { "type": "STRING" },
+                        "location": { "type": "STRING" },
+                        "salary": { "type": "STRING" },
+                        "workType": { "type": "STRING" },
+                        "companyType": { "type": "STRING" },
+                        "url": { "type": "STRING" }
+                    },
+                    required: ["title", "company", "location", "salary", "workType", "companyType", "url"]
+                }
+            };
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json", responseSchema: schema }
+            };
+            
+            const apiKey = ""; // Provided by environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0) {
+                    const jobsJson = result.candidates[0].content.parts[0].text;
+                    allJobs = JSON.parse(jobsJson);
+                    applyFiltersAndSort(); 
+                } else {
+                    displayError("The AI could not find any job listings. Please try again later.");
+                }
+            } catch (error) {
+                console.error("Error fetching job listings:", error);
+                displayError("An error occurred while searching. Please check the console.");
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Handles clicks on the new AI feature buttons.
+         */
+        async function handleAiFeatureClick(feature, jobTitle, company) {
+            aiModal.classList.remove('hidden');
+            modalBody.innerHTML = '<div class="flex justify-center"><div class="spinner"></div></div>';
+            modalCopyButton.textContent = 'Copy';
+
+            let prompt = '';
+            let title = '';
+
+            if (feature === 'cover-letter') {
+                title = `Cover Letter for ${jobTitle}`;
+                prompt = `Write a concise and professional cover letter for a Product Manager applying for the role of '${jobTitle}' at '${company}'. The applicant is skilled in product strategy, data analysis, and cross-functional leadership. The tone should be enthusiastic and confident.`;
+            } else if (feature === 'interview-prep') {
+                title = `Interview Prep for ${jobTitle}`;
+                prompt = `Generate 5 insightful interview questions that an applicant for the '${jobTitle}' role at '${company}' should be prepared to answer. Include one behavioral question, one product sense question, one technical question, one question about the company itself, and one question for the applicant to ask the interviewer. Format the response clearly with headings.`;
+            }
+            
+            modalTitle.textContent = title;
+
+            try {
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                const apiKey = ""; // Provided by environment
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`AI request failed: ${response.status}`);
+                
+                const result = await response.json();
+                const text = result.candidates[0].content.parts[0].text;
+                modalBody.innerText = text;
+
+            } catch (error) {
+                console.error("AI feature error:", error);
+                modalBody.innerText = "Sorry, there was an error generating the content. Please try again.";
+            }
+        }
+
+        /**
+         * Applies all filters and sorting, then re-renders the UI.
+         */
+        function applyFiltersAndSort() {
+            // 1. Filter
+            const salary = parseInt(salaryFilter.value);
+            const companyType = companyTypeFilter.value;
+            const workType = workTypeFilter.value;
+            const state = stateFilter.value;
+            const city = cityFilter.value.toLowerCase().trim();
+
+            let filteredJobs = allJobs.filter(job => {
+                const salaryMatch = parseMinSalary(job.salary) >= salary;
+                const companyMatch = companyType === 'All' || job.companyType === companyType;
+                const workTypeMatch = workType === 'All' || job.workType === workType;
+                const stateMatch = state === 'All' || (job.location && job.location.includes(state));
+                const cityMatch = city === '' || (job.location && job.location.toLowerCase().includes(city));
+                return salaryMatch && companyMatch && workTypeMatch && stateMatch && cityMatch;
+            });
+
+            // 2. Sort
+            const sortMethod = sortBy.value;
+            if (sortMethod === 'company') {
+                filteredJobs.sort((a, b) => a.company.localeCompare(b.company));
+            } else if (sortMethod === 'location') {
+                filteredJobs.sort((a, b) => a.location.localeCompare(b.location));
+            }
+            // 'recent' is the default and doesn't require sorting as the AI provides it.
+
+            // 3. Display
+            displayJobs(filteredJobs);
+        }
+
+        /**
+         * Renders a list of job objects to the DOM.
+         */
+        function displayJobs(jobs) {
+            jobListingsContainer.innerHTML = ''; 
+            
+            if (allJobs.length > 0) {
+                resultsHeader.classList.remove('hidden');
+                resultsCount.textContent = `Showing ${jobs.length} of ${allJobs.length} results`;
+            } else {
+                resultsHeader.classList.add('hidden');
+            }
+
+            if (jobs.length === 0) {
+                if(allJobs.length > 0) {
+                    displayError("No job listings match your current filter criteria.");
+                }
+                exportButton.disabled = true;
+                exportButton.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+            
+            exportButton.disabled = false;
+            exportButton.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            jobs.forEach(job => {
+                const jobCard = document.createElement('div');
+                jobCard.className = 'job-card bg-white p-6 rounded-xl shadow-md border border-transparent transition duration-200';
+                jobCard.dataset.title = job.title;
+                jobCard.dataset.company = job.company;
+                
+                jobCard.innerHTML = `
+                    <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="block group">
+                        <h3 class="text-xl font-bold text-gray-900 group-hover:text-blue-600">${job.title}</h3>
+                        <div class="company text-md font-semibold text-gray-700 mt-1">${job.company}</div>
+                        <div class="details flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500 mt-3">
+                            <span class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>${job.location}</span>
+                            <span class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 004 0V7.151c.22.071.412.164.567.267C13.863 8.248 14 9.08 14 10a4 4 0 11-8 0c0-.92.137-1.752.433-2.582zM10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0 2a10 10 0 100-20 10 10 0 000 20z" clip-rule="evenodd" /></svg>${job.salary}</span>
+                        </div>
+                        <div class="tags flex flex-wrap gap-2 text-xs font-semibold mt-4">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${job.workType}</span>
+                            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${job.companyType}</span>
+                        </div>
+                    </a>
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex items-center space-x-2">
+                        <button data-ai-feature="cover-letter" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors duration-200 p-2 rounded-md hover:bg-blue-50 flex-1 text-center">✨ Draft Cover Letter</button>
+                        <button data-ai-feature="interview-prep" class="text-sm font-semibold text-purple-600 hover:text-purple-800 transition-colors duration-200 p-2 rounded-md hover:bg-purple-50 flex-1 text-center">✨ Prep for Interview</button>
+                    </div>
+                `;
+                jobListingsContainer.appendChild(jobCard);
+            });
+        }
+        
+        function displayError(message) {
+            jobListingsContainer.innerHTML = '';
+            const errorCard = document.createElement('div');
+            errorCard.className = 'text-center py-16 px-6 bg-white rounded-xl shadow-md';
+            errorCard.innerHTML = `
+                <h3 class="text-xl font-semibold text-gray-700">No Results</h3>
+                <p class="text-gray-500 mt-2">${message}</p>
+            `;
+            jobListingsContainer.appendChild(errorCard);
+        }
+
+        function parseMinSalary(salaryStr) {
+            if (!salaryStr) return 0;
+            const numbers = salaryStr.match(/\d+(\.\d+)?/g);
+            if (!numbers) return 0;
+            let minSalary = parseFloat(numbers[0]);
+            if (minSalary < 1000) {
+                minSalary *= 1000;
+            }
+            return minSalary;
+        }
+
+        function exportToCsv() {
+            const salary = parseInt(salaryFilter.value);
+            const companyType = companyTypeFilter.value;
+            const workType = workTypeFilter.value;
+            const state = stateFilter.value;
+
+            const filteredJobs = allJobs.filter(job => {
+                const salaryMatch = parseMinSalary(job.salary) >= salary;
+                const companyMatch = companyType === 'All' || job.companyType === companyType;
+                const workTypeMatch = workType === 'All' || job.workType === workType;
+                const stateMatch = state === 'All' || (job.location && job.location.includes(state));
+                return salaryMatch && companyMatch && workTypeMatch && stateMatch;
+            });
+
+            const headers = ["Title", "Company", "Location", "Salary", "Work Type", "Company Type", "URL"];
+            const csvRows = [headers.join(',')];
+
+            for (const job of filteredJobs) {
+                const values = [
+                    job.title,
+                    job.company,
+                    job.location,
+                    job.salary,
+                    job.workType,
+                    job.companyType,
+                    job.url
+                ].map(value => `"${String(value || '').replace(/"/g, '""')}"`);
+                csvRows.push(values.join(','));
+            }
+
+            const csvString = csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'product_manager_jobs.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+    </script>
+</body>
+</html>
