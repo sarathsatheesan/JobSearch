@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Job Search</title>
+    <title>Enhanced AI Job Search</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
@@ -78,10 +78,10 @@
             <aside class="w-full lg:w-1/4 xl:w-1/5">
                 <div class="bg-white p-6 rounded-xl shadow-md">
                     <h4 class="text-xl font-bold mb-2">Search</h4>
-                     <p class="text-sm text-gray-600 mb-6">Find US Product Manager jobs from the past week.</p>
+                     <p class="text-sm text-gray-600 mb-6">Find US product jobs from the past week.</p>
                     <button id="ai-search-button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-200 flex items-center justify-center space-x-2 mb-6">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        <span>Search PM Jobs</span>
+                        <span>Search Product Jobs</span>
                     </button>
                     
                     <hr class="my-6">
@@ -155,7 +155,7 @@
                     <!-- Initial placeholder message -->
                     <div id="placeholder" class="text-center py-16 px-6 bg-white rounded-xl shadow-md">
                         <h3 class="text-xl font-semibold text-gray-700">Ready to find your next role?</h3>
-                        <p class="text-gray-500 mt-2">Click "Search PM Jobs" to see live results.</p>
+                        <p class="text-gray-500 mt-2">Click "Search Product Jobs" to see live results.</p>
                     </div>
                     <!-- Loading spinner (hidden by default) -->
                     <div id="loading-spinner" class="hidden text-center py-16 px-6 bg-white rounded-xl shadow-md flex flex-col items-center justify-center">
@@ -172,7 +172,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 id="modal-title" class="text-2xl font-bold"></h3>
-                <button id="modal-close-button" class="text-gray-500 hover:text-gray-800">&times;</button>
+                <button id="modal-close-button" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
             </div>
             <div id="modal-body" class="prose max-w-none">
                 <!-- AI content will be injected here -->
@@ -273,7 +273,7 @@
         // --- CORE FUNCTIONS ---
 
         /**
-         * Fetches job data from the AI model.
+         * Fetches job data from the AI model using the enhanced prompt and schema.
          */
         async function performAiSearch() {
             placeholder.classList.add('hidden');
@@ -285,8 +285,31 @@
             exportButton.disabled = true;
             exportButton.classList.add('opacity-50', 'cursor-not-allowed');
 
-            const prompt = `Your single most important mission is to conduct a completely exhaustive search for 'Product Manager' jobs in the US from the last 7 days. To ensure a comprehensive list, you must include results from premier job boards like Mind the Product, The Product Folks, Built In, Wellfound, Remotive, LinkedIn, Indeed, and ZipRecruiter. Do not omit any results. For every job, provide a direct, functioning URL to the job description page, a valid job title, company name, location, estimated salary range (or "Not specified"), work type, and company type. Respond with a JSON array of objects.`;
+            // --- ENHANCED PROMPT ---
+            const prompt = `
+Your primary mission is to conduct a comprehensive and exhaustive search for product-related jobs in the United States posted within the last 7 days. Your search must be expansive, covering the full spectrum of the product management career path.
 
+You must include roles for Product Manager, Product Owner, and Program Manager. For each of these roles, you must search across all seniority levels, including but not limited to: Associate, Junior, Senior (Sr.), Lead, Director, VP (Vice President), and CPO (Chief Product Officer).
+
+Pay special attention to and identify common specializations. If a job title or description indicates a specialization, capture it. Key specializations to look for are: Technical, Data, Growth, AI/ML, SaaS, E-commerce, UX, Fintech, Cybersecurity, and Platform.
+
+To ensure a comprehensive list, you must query sources according to the following tiered strategy:
+- Tier 1 (Exhaustive Search): You MUST perform an exhaustive search of these PM-specific boards: Mind the Product, The Product Folks, PMJobs, Product Manager Job Board, and WeLoveProduct.
+- Tier 2 (Thorough Search): You MUST conduct a thorough search of these high-signal tech boards: Built In, Wellfound (formerly AngelList), Work at a Startup (the Y Combinator job board), Dice, Welcome to the Jungle (formerly Otta), Himalayas, and CrunchBoard.
+- Tier 3 (Broad Search): Conduct a broad, intelligent search across these major aggregators: LinkedIn, Indeed, ZipRecruiter, Google Jobs, and Glassdoor.
+
+**Your primary directive is to include ALL relevant job postings. Do not omit any valid results based on perceived relevance or quality. Include jobs from all companies, including large tech firms (FAANG) and from all US states, including Utah.**
+
+For the "url" field, you MUST provide the direct, permanent link (permalink) to the individual job description page.
+**CRITICAL INSTRUCTIONS FOR URLS:**
+- **VALID:** The URL must open directly to the details of a single job. Example of a good URL structure: \`https://jobs.example.com/product-manager-role-12345\`
+- **INVALID:** Do NOT provide URLs that lead to a list of search results. Example of a bad URL: \`https://example.com/jobs/search?q=product+manager\`
+- **INVALID:** Do NOT provide URLs that lead to a generic company careers page. Example of a bad URL: \`https://company.com/careers\`
+- **FALLBACK:** If you are not 100% certain you have the correct, direct permalink, you MUST return an empty string ("") for the "url" field. It is better to provide no link than an incorrect one.
+
+For all other fields, provide the requested information (title, company, location, salary, workType, companyType, seniorityLevel, specialization). Respond with a valid JSON array of objects that strictly adheres to the provided response schema.
+`;
+            // --- ENHANCED SCHEMA ---
             const schema = {
                 type: "ARRAY",
                 items: {
@@ -298,9 +321,17 @@
                         "salary": { "type": "STRING" },
                         "workType": { "type": "STRING" },
                         "companyType": { "type": "STRING" },
-                        "url": { "type": "STRING" }
+                        "url": { "type": "STRING" },
+                        "seniorityLevel": {
+                            "type": "STRING",
+                            "description": "The seniority level of the job, e.g., 'Entry-Level', 'Mid-Level', 'Senior', 'Lead', 'Director', 'Executive'."
+                        },
+                        "specialization": {
+                            "type": "STRING",
+                            "description": "The specific product management specialization, e.g., 'Technical', 'Data', 'Growth', 'AI/ML', or 'General' if none."
+                        }
                     },
-                    required: ["title", "company", "location", "salary", "workType", "companyType", "url"]
+                    required: ["title", "company", "location", "salary", "workType", "companyType", "url", "seniorityLevel", "specialization"]
                 }
             };
 
@@ -319,20 +350,31 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+                if (!response.ok) {
+                    let errorDetails = `API request failed: ${response.status}`;
+                    try {
+                        // Attempt to parse the error response body for more details
+                        const errorData = await response.json();
+                        errorDetails += ` - ${JSON.stringify(errorData)}`;
+                    } catch (e) {
+                        // If the body isn't JSON, just use the raw text
+                        errorDetails += ` - ${await response.text()}`;
+                    }
+                    throw new Error(errorDetails);
+                }
 
                 const result = await response.json();
                 
-                if (result.candidates && result.candidates.length > 0) {
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts[0].text) {
                     const jobsJson = result.candidates[0].content.parts[0].text;
                     allJobs = JSON.parse(jobsJson);
                     applyFiltersAndSort(); 
                 } else {
-                    displayError("The AI could not find any job listings. Please try again later.");
+                    displayUserMessage("No Jobs Found", "The AI could not find any job listings. The response was empty.");
                 }
             } catch (error) {
                 console.error("Error fetching job listings:", error);
-                displayError("An error occurred while searching. Please check the console.");
+                displayUserMessage("An Error Occurred", "An error occurred while searching. Please check the console for details.", true);
             } finally {
                 loadingSpinner.classList.add('hidden');
             }
@@ -370,7 +412,16 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (!response.ok) throw new Error(`AI request failed: ${response.status}`);
+                if (!response.ok) {
+                    let errorDetails = `AI feature request failed: ${response.status}`;
+                     try {
+                        const errorData = await response.json();
+                        errorDetails += ` - ${JSON.stringify(errorData)}`;
+                    } catch (e) {
+                        errorDetails += ` - ${await response.text()}`;
+                    }
+                    throw new Error(errorDetails);
+                }
                 
                 const result = await response.json();
                 const text = result.candidates[0].content.parts[0].text;
@@ -378,7 +429,7 @@
 
             } catch (error) {
                 console.error("AI feature error:", error);
-                modalBody.innerText = "Sorry, there was an error generating the content. Please try again.";
+                modalBody.innerText = "Sorry, there was an error generating the content. Please check the console for details.";
             }
         }
 
@@ -394,9 +445,12 @@
             const city = cityFilter.value.toLowerCase().trim();
 
             let filteredJobs = allJobs.filter(job => {
-                const salaryMatch = parseMinSalary(job.salary) >= salary;
+                const jobMinSalary = parseMinSalary(job.salary);
+                // If jobMinSalary is 0, it means salary was not specified, so we should include it.
+                const salaryMatch = jobMinSalary === 0 || jobMinSalary >= salary;
+                
                 const companyMatch = companyType === 'All' || job.companyType === companyType;
-                const workTypeMatch = workType === 'All' || job.workType === workType;
+                const workTypeMatch = workType === 'All' || (job.workType && job.workType.replace('-', ' ') === workType.replace('-', ' '));
                 const stateMatch = state === 'All' || (job.location && job.location.includes(state));
                 const cityMatch = city === '' || (job.location && job.location.toLowerCase().includes(city));
                 return salaryMatch && companyMatch && workTypeMatch && stateMatch && cityMatch;
@@ -417,6 +471,7 @@
 
         /**
          * Renders a list of job objects to the DOM.
+         * @param {Array} jobs - The array of job objects to display.
          */
         function displayJobs(jobs) {
             jobListingsContainer.innerHTML = ''; 
@@ -429,8 +484,10 @@
             }
 
             if (jobs.length === 0) {
+                // This condition now correctly handles the case where the initial fetch works
+                // but filters result in an empty list.
                 if(allJobs.length > 0) {
-                    displayError("No job listings match your current filter criteria.");
+                    displayUserMessage("No Jobs Found", "No job listings match your current filter criteria.");
                 }
                 exportButton.disabled = true;
                 exportButton.classList.add('opacity-50', 'cursor-not-allowed');
@@ -446,19 +503,33 @@
                 jobCard.dataset.title = job.title;
                 jobCard.dataset.company = job.company;
                 
+                // Create tag HTML, only showing if data exists
+                const workTypeTag = job.workType ? `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${job.workType}</span>` : '';
+                const companyTypeTag = job.companyType ? `<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${job.companyType}</span>` : '';
+                const seniorityTag = job.seniorityLevel ? `<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full">${job.seniorityLevel}</span>` : '';
+                const specializationTag = job.specialization && job.specialization.toLowerCase() !== 'general' ? `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">${job.specialization}</span>` : '';
+
+                // Validate URL to determine if the title should be a link
+                const isUrlValid = job.url && job.url.startsWith('http');
+                const titleElement = isUrlValid 
+                    ? `<a href="${job.url}" target="_blank" rel="noopener noreferrer" class="group-hover:text-blue-600">${job.title}</a>`
+                    : `<span>${job.title}</span>`;
+
                 jobCard.innerHTML = `
-                    <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="block group">
-                        <h3 class="text-xl font-bold text-gray-900 group-hover:text-blue-600">${job.title}</h3>
+                    <div class="group">
+                        <h3 class="text-xl font-bold text-gray-900">${titleElement}</h3>
                         <div class="company text-md font-semibold text-gray-700 mt-1">${job.company}</div>
                         <div class="details flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500 mt-3">
                             <span class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>${job.location}</span>
                             <span class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 004 0V7.151c.22.071.412.164.567.267C13.863 8.248 14 9.08 14 10a4 4 0 11-8 0c0-.92.137-1.752.433-2.582zM10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0 2a10 10 0 100-20 10 10 0 000 20z" clip-rule="evenodd" /></svg>${job.salary}</span>
                         </div>
                         <div class="tags flex flex-wrap gap-2 text-xs font-semibold mt-4">
-                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${job.workType}</span>
-                            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${job.companyType}</span>
+                            ${workTypeTag}
+                            ${companyTypeTag}
+                            ${seniorityTag}
+                            ${specializationTag}
                         </div>
-                    </a>
+                    </div>
                     <div class="mt-4 pt-4 border-t border-gray-100 flex items-center space-x-2">
                         <button data-ai-feature="cover-letter" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors duration-200 p-2 rounded-md hover:bg-blue-50 flex-1 text-center">✨ Draft Cover Letter</button>
                         <button data-ai-feature="interview-prep" class="text-sm font-semibold text-purple-600 hover:text-purple-800 transition-colors duration-200 p-2 rounded-md hover:bg-purple-50 flex-1 text-center">✨ Prep for Interview</button>
@@ -468,43 +539,59 @@
             });
         }
         
-        function displayError(message) {
+        /**
+         * Displays a message to the user, such as an error or a "no results" message.
+         * @param {string} title - The title of the message.
+         * @param {string} message - The body content of the message.
+         * @param {boolean} isError - If true, the title will be styled as an error.
+         */
+        function displayUserMessage(title, message, isError = false) {
             jobListingsContainer.innerHTML = '';
-            const errorCard = document.createElement('div');
-            errorCard.className = 'text-center py-16 px-6 bg-white rounded-xl shadow-md';
-            errorCard.innerHTML = `
-                <h3 class="text-xl font-semibold text-gray-700">No Results</h3>
-                <p class="text-gray-500 mt-2">${message}</p>
+            const messageCard = document.createElement('div');
+            messageCard.className = 'text-center py-16 px-6 bg-white rounded-xl shadow-md';
+            const titleClass = isError ? 'text-red-700' : 'text-gray-700';
+            messageCard.innerHTML = `
+                <h3 class="text-xl font-semibold ${titleClass}">${title}</h3>
+                <p class="text-gray-600 mt-2">${message}</p>
             `;
-            jobListingsContainer.appendChild(errorCard);
+            jobListingsContainer.appendChild(messageCard);
         }
 
         function parseMinSalary(salaryStr) {
-            if (!salaryStr) return 0;
-            const numbers = salaryStr.match(/\d+(\.\d+)?/g);
+            if (!salaryStr || typeof salaryStr !== 'string') return 0;
+            // Handle "Not Specified" or similar non-numeric strings
+            if (isNaN(parseInt(salaryStr[0], 10))) return 0;
+            
+            const numbers = salaryStr.match(/\d+/g);
             if (!numbers) return 0;
-            let minSalary = parseFloat(numbers[0]);
-            if (minSalary < 1000) {
-                minSalary *= 1000;
+            
+            let minSalary = parseFloat(numbers[0].replace(/,/g, ''));
+            if (salaryStr.toLowerCase().includes('k')) {
+                 minSalary *= 1000;
             }
             return minSalary;
         }
 
         function exportToCsv() {
+            // Use the currently filtered jobs for the export
             const salary = parseInt(salaryFilter.value);
             const companyType = companyTypeFilter.value;
             const workType = workTypeFilter.value;
             const state = stateFilter.value;
+            const city = cityFilter.value.toLowerCase().trim();
 
             const filteredJobs = allJobs.filter(job => {
-                const salaryMatch = parseMinSalary(job.salary) >= salary;
+                const jobMinSalary = parseMinSalary(job.salary);
+                const salaryMatch = jobMinSalary === 0 || jobMinSalary >= salary;
+
                 const companyMatch = companyType === 'All' || job.companyType === companyType;
                 const workTypeMatch = workType === 'All' || job.workType === workType;
                 const stateMatch = state === 'All' || (job.location && job.location.includes(state));
-                return salaryMatch && companyMatch && workTypeMatch && stateMatch;
+                const cityMatch = city === '' || (job.location && job.location.toLowerCase().includes(city));
+                return salaryMatch && companyMatch && workTypeMatch && stateMatch && cityMatch;
             });
 
-            const headers = ["Title", "Company", "Location", "Salary", "Work Type", "Company Type", "URL"];
+            const headers = ["Title", "Company", "Location", "Salary", "Work Type", "Company Type", "Seniority Level", "Specialization", "URL"];
             const csvRows = [headers.join(',')];
 
             for (const job of filteredJobs) {
@@ -515,6 +602,8 @@
                     job.salary,
                     job.workType,
                     job.companyType,
+                    job.seniorityLevel,
+                    job.specialization,
                     job.url
                 ].map(value => `"${String(value || '').replace(/"/g, '""')}"`);
                 csvRows.push(values.join(','));
@@ -525,7 +614,7 @@
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', 'product_manager_jobs.csv');
+            link.setAttribute('download', 'product_jobs.csv');
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
